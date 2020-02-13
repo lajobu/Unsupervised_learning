@@ -10,7 +10,7 @@ The code was written in R language, also there is available a jupyter notebook, 
 
 Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
-# You will be able to find the next pappers:
+# You will be able to find the next papers:
 
 ## 1) Clustering - Cluster analysis of the EU-28 trade, during 2018
 
