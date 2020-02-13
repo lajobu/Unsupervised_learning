@@ -14,15 +14,15 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 ## 1) Clustering - Cluster analysis of the EU-28 trade, during 2018
 
-[Jupyer notebook - Clustering](https://github.com/lajobu/Unsupervised_learning~/Clustering.ipynb)
+[Jupyer notebook - Clustering](https://github.com/lajobu/Unsupervised_learning/blob/master/1.Clustering/Clustering.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Clustering.png)
 
 ## 2) Dimensionality reduction - Applying Dimensionality Reduction on the EU-28 trade, during 2018 and image compressing to the picture: Rome.jpg
 
-[Jupyer notebook - Dimensionality reduction](https://github.com/lajobu/Unsupervised_learning/blob/master/2)%20Dimensionality%20reduction/Dimensionality%20reduction.ipynb)
+[Jupyer notebook - Dimensionality reduction](https://github.com/lajobu/Unsupervised_learning/blob/master/2.Dimensionality%20reduction/Dimensionality%20reduction.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Dimensionality%20reduction.png)
 
 ## 3) Association rules - Applying Association rules on 2000 supermarket baskets
 
-[Jupyer notebook - Association rules](https://github.com/lajobu/Unsupervised_learning/blob/master/3)Association%20rules/Association%20rules.ipynb)
+[Jupyer notebook - Association rules](hhttps://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/Association%20rules.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Association%20rules.png)
