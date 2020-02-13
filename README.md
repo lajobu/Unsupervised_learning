@@ -1,4 +1,4 @@
-# Unsupervised_learning:
+# Unsupervised machine learning:
 
 Here you can find the papers that I wrote for the subject: Unsupervised Machine Learing during my MA Data Science studies.
 
