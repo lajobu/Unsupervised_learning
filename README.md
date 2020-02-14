@@ -25,4 +25,4 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 ## 3) Association rules - Applying Association rules on 2000 supermarket baskets
 
 [Jupyer notebook - Association rules](hhttps://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/Association%20rules.ipynb)
-![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Association%20rules.png)
+![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Association%20rules.png) 
