@@ -6,7 +6,7 @@ The code was written in R language, also there is available a jupyter notebook, 
 
 # What is unsupervised learning?
 
-* [Unsupervised learning is a type of self-organized Hebbian learning that helps find previously unknown patterns in data set without pre-existing labels. It is also known as self-organization and allows the modeling of probability densities of given inputs. It is one of the three main categories of machine learning, along with supervised and reinforcement learning. Semi-supervised learning has also been described, and is a hybridization of supervised and unsupervised techniques.]
+* Unsupervised learning is a type of self-organized Hebbian learning that helps find previously unknown patterns in data set without pre-existing labels. It is also known as self-organization and allows the modeling of probability densities of given inputs. It is one of the three main categories of machine learning, along with supervised and reinforcement learning. Semi-supervised learning has also been described, and is a hybridization of supervised and unsupervised techniques.
 
 Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
