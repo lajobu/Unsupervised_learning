@@ -16,15 +16,22 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 ## :ballot_box_with_check: 1) Clustering - Cluster analysis of the EU-28 trade, during 2018
 
+[:round_pushpin: R_markdown]()
+[:round_pushpin: RPubs]()
 [:round_pushpin: Jupyer notebook - Clustering](https://github.com/lajobu/Unsupervised_learning/blob/master/1.Clustering/Clustering.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Clustering.png)
 
 ## :ballot_box_with_check: 2) Dimensionality reduction - Applying Dimensionality Reduction on the EU-28 trade, during 2018 and image compressing to the picture: Rome.jpg
 
+
+[:round_pushpin: R_markdown]()
+[:round_pushpin: RPubs]()
 [:round_pushpin: Jupyer notebook - Dimensionality reduction](https://github.com/lajobu/Unsupervised_learning/blob/master/2.Dimensionality%20reduction/Dimensionality%20reduction.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Dimensionality%20reduction.png)
 
 ## :ballot_box_with_check: 3) Association rules - Applying Association rules on 2000 supermarket baskets
 
+[:round_pushpin: R_markdown]()
+[:round_pushpin: RPubs]()
 [:round_pushpin: Jupyer notebook - Association rules](https://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/Association%20rules.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Association%20rules.png) 
