@@ -1,0 +1,356 @@
+---
+title: "Clustering applied to the EU trade data, 2018"
+author: 'Jorge Bueno Perez'
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+# 1) `Project description`:
+
+The goal of this paper is to analyze the evidence of `clustering` based on the selected data. To this end, I chose several data from `Eurostat-database`, in order to find out if there are `clusters in term of trade in the European Union (28 countries)`.
+
+# 2) `Dataset description`
+
+Description of the diferent `features`:
+
+1. `GDP Gross domestic product at market prices` (2018, million euro)
+2. `I_TR_EX Intra-EU28 trade, exports` (2018, millions of ECU/EURO)
+3. `I_TR_IM Intra-EU28 trade, imports` (2018, millions of ECU/EURO)
+4. `E_TR_EX Extra-EU28 trade, exports` (2018, millions of ECU/EURO)
+5. `E_TR_IM Extra-EU28 trade, imports` (2018, millions of ECU/EURO)
+6. `T_TR_I Total intra-EU28 trade` (2018, millions of ECU/EURO)
+7. `T_TR_E Total extra-EU28 trade` (2018, millions of ECU/EURO)
+8. `T_TR_IM Total imports-EU28 trade` (2018, millions of ECU/EURO)
+9. `T_TR_EX Total exports-EU28 trade` (2018, millions of ECU/EURO)
+10. `T_GDP_R Total trade to GDP ratio` (%)
+11. `A_T_G Air transport of goods` (2018, tonnes)
+12. `T_TR_I` = I_TR_EX + I_TR_IM
+13. `T_TR_E` = E_TR_EX + E_TR_IM
+14. `T_TR_IM` = I_TR_IM + E_TR_IM
+15. `T_TR_EX` = I_TR_EX + E_TR_EX
+16. `T_GDP_R` = ((T_TR_IM + T_TR_EX) / GDP) * 10
+
+Data `bibligraphy`:
+
+GDP Eurostat database (tipsau10) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tipsau10
+
+I_TR_EX Eurostat database (tet00047) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00047
+
+I_TR_IM Eurostat database (tet00047) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00047
+
+E_TR_EX Eurostat database (tet00055) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00055
+
+E_TR_IM Eurostat database (tet00055) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00055
+
+A_T_G Eurostat database (ttr00011) –
+https://ec.europa.eu/eurostat/web/products-datasets/-/ttr00011
+
+# 3) `Manipulation of the data`:
+
+* First we will load all the necesary `packages` and the `data`:
+
+```{r echo = T, results = 'hide', message= FALSE, warning= FALSE}
+library(cluster)
+library(factoextra)
+library(flexclust)
+library(fpc)
+library(clustertend)
+library(ClusterR)
+library(NbClust)
+library(readxl)
+library(reshape)
+library(psych)
+library(dplyr)
+```
+
+```{r echo = F, results = 'hide', message= FALSE}
+setwd("/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Project Clustering")
+trade <- read_excel("Trade_Project.xlsx")
+```
+
+```{r echo=FALSE}
+show(trade) 
+```
+
+```{r echo=FALSE, results='asis'}
+trade$T_TR_I<-(trade$I_TR_EX + trade$I_TR_IM) 
+trade$T_TR_E<-(trade$E_TR_EX + trade$E_TR_IM) 
+trade$T_TR_IM<-(trade$I_TR_IM + trade$E_TR_IM) 
+trade$T_TR_EX<-(trade$I_TR_EX + trade$E_TR_EX) 
+trade$T_GDP_R<-((trade$T_TR_IM + trade$T_TR_EX)/trade$GDP)*100 
+setwd("/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Project Clustering")
+air <- read_excel("Air transport of goods.xlsx", sheet = "Sheet2", col_types = c("text", "numeric"))
+trade$A_T_G <- air$Values
+```
+
+Finally, the dataset “trade” contains 28 rows, and 12 columns
+
+# 4) `Pre-diagnosis`:
+
+Firstly, I created two groups of data, but when I applied `Hopkins` the results were `greater than 15%`, this means that the `groups selected were not highly clustered`.
+
+Consequently, I decided to create three additional groups, and I `selected the one with the smallest Hopkins value`, hence I `selected “X1”`, with the `Hopkins value of: 0.1134274 (11,34%)`.
+
+* `X1` - First group: GDP, T_GDP_R, A_T_G
+
+```{r echo=FALSE}
+X1<-trade[,c(2,11,12)] 
+X1 
+```
+
+```{r echo=FALSE, results='asis', warning= FALSE}
+fviz_pca_ind(prcomp(X1, title = "TOTAL TRADE INTRA VS. TOTAL TRADE EXTRA", geom = "point", ggtheme = theme_classic(),legend = "bottom"))
+
+hop <- get_clust_tendency(X1, n = nrow(X1)-1, graph = FALSE)
+hop$hopkins_stat 
+```
+
+The hopkins value obtained is 11.34%
+
+On the above graph it can be observed that there is one big cluster, and another additional cluster, also one `outliner (11) – Germany`.
+
+* `X2` - Second group: GDP, I_TR_EX, E_TR_EX
+
+```{r echo=FALSE}
+X2<-trade[,c(2,3,5)] 
+X2
+```
+
+```{r echo=FALSE, results='asis', warning= FALSE}
+fviz_pca_ind(prcomp(X2, title = "TOTAL TRADE INTRA VS. TOTAL TRADE EXTRA", geom = "point", ggtheme = theme_classic(),legend = "bottom"))
+
+hop <- get_clust_tendency(X2, n = nrow(X2)-1, graph = FALSE)
+hop$hopkins_stat 
+```
+
+The hopkins value obtained is 17.77%
+
+* `X3` - Third group: GDP, I_TR_IM,E_TR_IM
+
+```{r echo=FALSE}
+X3<-trade[,c(2,4,6)] 
+X3 
+```
+
+```{r echo=FALSE, warning= FALSE}
+fviz_pca_ind(prcomp(X3, title = "TOTAL TRADE INTRA VS. TOTAL TRADE EXTRA", geom = "point", ggtheme = theme_classic(),legend = "bottom"))
+
+hop <- get_clust_tendency(X3, n = nrow(X3)-1, graph = FALSE)
+hop$hopkins_stat 
+```
+
+The hopkins value obtained is 18.62%
+
+* `X4` - Fourth group: T_TR_I, T_TR_E, A_T_G
+
+```{r echo=FALSE}
+X4<-trade[,c(7,8,12)] 
+X4 
+```
+
+```{r echo=FALSE, results='asis', warning= FALSE}
+fviz_pca_ind(prcomp(X4, title = "TOTAL TRADE INTRA VS. TOTAL TRADE EXTRA", geom = "point", ggtheme = theme_classic(),legend = "bottom"))
+
+hop <- get_clust_tendency(X4, n = nrow(X4)-1, graph = FALSE)
+hop$hopkins_stat 
+```
+
+The hopkins value obtained is 13.74%
+
+* `X5` - Fifth group: I_TR_EX, E_TR_EX, T_TR_E
+
+```{r echo=FALSE}
+X5<-trade[,c(11,8,12)] 
+X5 
+```
+
+```{r echo=FALSE, results='asis', warning= FALSE}
+fviz_pca_ind(prcomp(X5, title = "TOTAL TRADE INTRA VS. TOTAL TRADE EXTRA", geom = "point", ggtheme = theme_classic(),legend = "bottom"))
+
+hop <- get_clust_tendency(X5, n = nrow(X5)-1, graph = FALSE)
+hop$hopkins_stat 
+```
+
+The hopkins value obtained is 14.48%
+
+To go further, I will `select X1`, as it has the lowest Hopkings value
+
+```{r echo=FALSE}
+get_clust_tendency(X1, 2, graph=TRUE, gradient=list(low="red", mid="white", high="blue"), seed = 123) 
+```
+
+The hopkins value obtained is 84.94%
+
+```{r echo=FALSE, results='asis'}
+get_clust_tendency(X1, 3, graph=TRUE, gradient=list(low="red", mid="white", high="blue"), seed = 123)
+```
+
+The hopkins value obtained is 95.36%
+
+```{r echo=FALSE, results='asis'}
+get_clust_tendency(X1, 4, graph=TRUE, gradient=list(low="red", mid="white", high="blue"), seed = 123)
+```
+
+The hopkins value obtained is 99.05%
+
+```{r echo=FALSE, results='asis'}
+get_clust_tendency(X1, 5, graph=TRUE, gradient=list(low="red", mid="white", high="blue"), seed = 123)
+```
+
+The hopkins value obtained is 86.45%
+
+# 5) Identification of the `numBER of clusters`:
+
+## 5.1) `d index`:
+
+```{r echo=FALSE, results='asis'}
+NbClust(X1, distance="euclidean", min.nc=2, max.nc=10, method="ward.D2", index="dindex") 
+```
+
+As per the above graphic, it seems that the `optimum is 4 clusters`, the same according to the index.
+
+## 5.2) `Hubert`:
+
+```{r echo=FALSE, results='asis'}
+NbClust(X1, distance="euclidean", min.nc=2, max.nc=10, method="ward.D2", index="hubert")
+```
+
+As per the above graphic, also it seems that the `optimum option is to choose 4 clusters`.
+
+## 5.3) `K-means` (silhouette and wss):
+
+Firsty, `silhoutte`:
+
+```{r echo=FALSE, results='asis'}
+fviz_nbclust(X1, FUNcluster=kmeans, method="silhouette")+theme_classic() 
+```
+
+Finally, `wss`:
+
+```{r echo=FALSE, results='asis'}
+fviz_nbclust(X1, kmeans, method="wss")+theme_classic()
+```
+
+As a result of this operation it appears that the `optimal number of clusters should be 2`, also `we can consider 3`, as there is not a lot of difference between both values
+
+## 5.4) `PAM` (silhouette and wss):
+
+Firsty, `silhoutte`:
+
+```{r echo=FALSE, results='asis'}
+fviz_nbclust(X1, pam, method="silhouette")+theme_classic() 
+```
+
+Finally, `wss`:
+
+```{r echo=FALSE, results='asis'}
+fviz_nbclust(X1, pam, method="wss")+theme_classic()
+```
+
+As per the above results, it looks that the `optimal number of clusters should be 2`, also `we can consider 3 and 4`, as there is not a lot of difference between these values.
+
+Considering all the results above, I could say that the number of `optimal clusters should be 3`, because the result of two methods considered the optimal as 4 clusters, and another two methods considered the optimal as 2, hence I believe it would be better to take the average.
+
+# 6) `Clustering`:
+
+## 6.1) `K-means`:
+
+```{r echo=FALSE, results='asis'}
+kmeans <- eclust(X1,FUNcluster="kmeans", k=3,hc_metric = "euclidean")
+
+kmeans.sil<-silhouette(kmeans$cluster, dist(X1))
+fviz_silhouette(kmeans.sil)
+```
+
+The `average of silhouette width for K-means is 0.7`. Analyzing the position of the data points in the graph, it seems that they matched with their own cluster.
+
+## 6.2) `PAM`:
+
+```{r echo=FALSE, results='asis'}
+pam <- eclust(X1,FUNcluster="pam", k=3,hc_metric = "euclidean")
+
+pam.sil<-silhouette(pam$cluster, dist(X1))
+fviz_silhouette(pam.sil)
+```
+
+The `average of silhouette width for PAM is 0.69`.
+
+It appears that `K-mean fits the data better`, hence I will continue using K-means method.
+
+# 7) `Post-diagnosis`:
+
+```{r echo=FALSE, results='asis', message= FALSE}
+d1<-cclust(X1, 3, dist="euclidean")
+shadow(d1)
+
+plot(shadow(d1))
+```
+
+As per the above values, I can conclude that the `data is not clustered properly`, as the first and the third value are similar.
+
+For the reason above, I will `attempt to perform the same analysis considering two clusters` with K-means method:
+
+```{r echo=FALSE, results='asis', message= FALSE}
+d2<-cclust(X1, 2, dist="euclidean")
+shadow(d2)
+
+plot(shadow(d2))
+```
+
+As per the above values for `two clusters`, `I can conclude that the data is clustered properly`, the values of the clusters are not close.
+
+Therefore, I will proceed once again to perform the analysis of the point 5.1), in this case with two clusters intead of three:
+
+```{r echo=FALSE, results='asis'}
+kmeans1 <- eclust(X1,FUNcluster="kmeans", k=2,hc_metric = "euclidean")
+
+kmeans1.sil<-silhouette(kmeans1$cluster, dist(X1))
+fviz_silhouette(kmeans1.sil)
+```
+
+The `average silhouette is 0.78`. Greater than with three clusters.
+
+# 8) `Results`:
+
+```{r echo=FALSE, results='asis'}
+stripes(d2)
+```
+
+There is a lot of distance in the second cluster, this means that the `countries differ the most in the second group`.
+
+```{r echo=FALSE, results='asis'}
+ToCluster.c<-cbind(X1, kmeans1$cluster)
+colnames(ToCluster.c)[4]<-c("Group")
+
+df.m <- melt(ToCluster.c, id.var = "Group")
+df.m$Group <- as.character(df.m$Group)
+
+p <- ggplot(data = df.m, aes(x=variable, y=value)) +
+  geom_boxplot(aes(fill = Group),outlier.size = 1) +
+  facet_wrap( ~ variable, scales="free", ncol = 2) +
+  xlab(label = NULL) + ylab(label = NULL) + ggtitle("Boxplots for 3 Groups of Clients") +
+  guides(fill=guide_legend(title="Groups"))
+
+p 
+```
+
+* 1) Orange – `Big economies`:
+
+The first group of countries has `high GDP`, with a `low trade of GDP ratio`, but `big air transport of goods`.
+
+* 2) Blue – `Small economies`:
+
+The second group of countries has `small GDP`, in average it has `greater trade GDP than the first group`, but `lowest air transports of goods than the first group`.
+
+# 9) `Conclusions`:
+
+The `method K-Means` shows that the optimum division of the `data would be in two clusters`, considering the following variables: `GDP, T_GDP_R and A_T_G`.
+
+The `two groups have differing characteristics`, divided between `big countries with big GDP`, and `small countries with small GDP`, with more distance in the first group of big economies. Regarding T_GDP_R the second group has a huge distance in comparison with the first. Finally, for the variable A_T_G, the second group has not a lot of distance, the data are concentrated around the same point.
