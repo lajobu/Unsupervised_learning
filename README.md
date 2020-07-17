@@ -18,7 +18,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 [:round_pushpin: R_markdown - Clustering]()
 
-[:round_pushpin: RPubs - Clustering]()
+[:round_pushpin: RPubs - Clustering](https://rpubs.com/Lajobu/clustering_trade)
 
 [:round_pushpin: Jupyer notebook - Clustering](https://github.com/lajobu/Unsupervised_learning/blob/master/1.Clustering/Clustering.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Clustering.png)
