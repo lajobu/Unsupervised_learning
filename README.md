@@ -16,7 +16,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 ## :ballot_box_with_check: 1) Clustering - Cluster analysis of the EU-28 trade, during 2018
 
-[:round_pushpin: R_markdown - Clustering]()
+[:round_pushpin: R_markdown - Clustering](https://github.com/lajobu/Unsupervised_learning/blob/master/1.Clustering/Clustering_trade.Rmd)
 
 [:round_pushpin: RPubs - Clustering](https://rpubs.com/Lajobu/clustering_trade)
 
