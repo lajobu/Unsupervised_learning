@@ -27,7 +27,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 [:round_pushpin: RPubs - Dimensionality reduction](https://rpubs.com/Lajobu/DR_trade)
 
-[:round_pushpin: R_markdown - Dimensionality reduction]()
+[:round_pushpin: R_markdown - Dimensionality reduction](https://github.com/lajobu/Unsupervised_learning/blob/master/2.Dimensionality%20reduction/DR_trade.Rmd)
 
 [:round_pushpin: Jupyer notebook - Dimensionality reduction](https://github.com/lajobu/Unsupervised_learning/blob/master/2.Dimensionality%20reduction/Dimensionality%20reduction.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Dimensionality%20reduction.png)
