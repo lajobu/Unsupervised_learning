@@ -1,0 +1,498 @@
+---
+title: "Dimensionality Reduction applied to the EU trade data, 2018"
+author: 'Jorge Bueno Perez'
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r echo = F, results = 'hide', message= FALSE}
+library(knitr)
+library(rmdformats)
+```
+
+```{r setup, echo=FALSE, cache=FALSE}
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1) `Project description`:
+
+The goal of this paper is to apply `dimensionality reduction` techniques to the selected data. To this end, I chose several data from Eurostat-database, in order to discover if it is `possible to reduce features without lossing quality of the following dataset`: `trade in the European Union (28 countries) during 2018`
+
+Last but not least, in the extensions we will see how dimensionality reduction through `image compression` can be applied
+
+# 2) `Dataset description`
+
+Description of the diferent `features`:
+
+1. `GDP Gross domestic product at market prices` (2018, million euro)
+2. `I_TR_EX Intra-EU28 trade, exports` (2018, millions of ECU/EURO)
+3. `I_TR_IM Intra-EU28 trade, imports` (2018, millions of ECU/EURO)
+4. `E_TR_EX Extra-EU28 trade, exports` (2018, millions of ECU/EURO)
+5. `E_TR_IM Extra-EU28 trade, imports` (2018, millions of ECU/EURO)
+6. `T_TR_I Total intra-EU28 trade` (2018, millions of ECU/EURO)
+7. `T_TR_E Total extra-EU28 trade` (2018, millions of ECU/EURO)
+8. `T_TR_IM Total imports-EU28 trade` (2018, millions of ECU/EURO)
+9. `T_TR_EX Total exports-EU28 trade` (2018, millions of ECU/EURO)
+10. `T_GDP_R Total trade to GDP ratio` (%)
+11. `A_T_G Air transport of goods` (2018, tonnes)
+12. `T_TR_I` = I_TR_EX + I_TR_IM
+13. `T_TR_E` = E_TR_EX + E_TR_IM
+14. `T_TR_IM` = I_TR_IM + E_TR_IM
+15. `T_TR_EX` = I_TR_EX + E_TR_EX
+16. `T_GDP_R` = ((T_TR_IM + T_TR_EX) / GDP) * 10
+
+Data `bibligraphy`:
+
+GDP Eurostat database (tipsau10) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tipsau10
+
+I_TR_EX Eurostat database (tet00047) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00047
+
+I_TR_IM Eurostat database (tet00047) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00047
+
+E_TR_EX Eurostat database (tet00055) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00055
+
+E_TR_IM Eurostat database (tet00055) -
+https://ec.europa.eu/eurostat/web/products-datasets/-/tet00055
+
+A_T_G Eurostat database (ttr00011) –
+https://ec.europa.eu/eurostat/web/products-datasets/-/ttr00011
+
+# 3) `Manipulation of the data`:
+
+* First we will load all the necesary `packages` and the `data`:
+
+```{r echo = T, results = 'hide', message= FALSE, warning= FALSE}
+library(readxl) 
+library(corrplot)
+library(ggplot2)
+library(GGally)
+library(smacof)
+library(labdsv)
+library(vegan)
+library(MASS)
+library(ape)
+library(ggfortify)
+library(FactoMineR)
+library(factoextra)
+library(pca3d)
+library(pls)
+library(ClusterR)
+library(ggrepel)
+library(MVN)
+library(clusterSim)
+library(dimRed)
+library(fastICA)
+library(umap)
+library(ica)
+```
+
+```{r echo = F, results = 'hide', message= FALSE}
+setwd("/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR")
+trade <- read_excel("Trade_Project.xlsx")
+```
+
+```{r echo=FALSE}
+show(trade)
+```
+
+```{r echo=FALSE}
+summary(trade)
+```
+
+As we can see above, our data frame "trade" has `28 rows and 8 rows`, also we can see the main statistics.
+
+A new data frame `x.trade.df` was created, in order to have only the selected features, we will obtain a data frame with `28 rows and 7 columns`:
+
+```{r echo=FALSE}
+x.trade <- trade[,c(2:8)]
+x.trade.df <- data.frame(x.trade)
+```
+
+The dataset and the features selected are `the same as the project clustering`, but in this case, it was `included M_T_G`, this is the `sea transport of goods`.
+
+I included this feature because I know that it is not highly correlated with the rest of features, as the others depend on how big the country is, but the sea transport of goods also depends on the access that the country has to the sea. As we can see, there are for example countries with zero values, the contrary to A_T_G (air transport of goods), as all the countries are well developed, and they have access to air transport.
+
+At this point we are ready to begin with `dimensionality reduction`, after maybe we will have the need to standardize or normalized the data frame, but it would be applied in the corresponding method.
+
+# 4) `Correlation between variables`:
+
+```{r echo=FALSE, results = 'hide', warning= FALSE, message= FALSE}
+detach(package:corrplot, unload = TRUE)
+library(corrplot)
+```
+
+Despite the fact that the package `corrplot` was installed in the beginning, several times we need to deactivate and activate once again, hence I need to run the code above in order to run a fancy correlation plot.
+
+```{r echo=FALSE}
+trade.cor<-cor(x.trade.df, method="pearson") 
+print(trade.cor, digits=2)
+corrplot(trade.cor, order ="alphabet")
+```
+
+As we can see in the graph and on the table above, all the `variables are highly correlated`, but `M_T_G` (sea transport of good) has `lower correlation` between variables than the rest of the data, hence the previous decision of incorporation this variable has sense, in order not to have solely highly correlation.
+
+Due to the fact that all the variables are highly correlated, a priori, it looks like that some features can be reduced, without losing a lot of information.
+
+Additionally it is possible to run `other kind of graphs to check the correlation`, as the one below:
+
+```{r echo=FALSE, message=FALSE}
+ggpairs(x.trade.df, axisLabels="none", columns = c(1:7), upper = list(continuous = wrap("cor", size = 9)))
+```
+
+# 5) `MDS - Multidimensional Scaling`:
+
+I will apply the dimensionality reduction method MDS.
+
+Fist of all one should standardize the variables:
+
+```{r echo=FALSE, message=FALSE}
+x.trade.s <- scale(x.trade.df, center=TRUE, scale=TRUE)
+head(x.trade.s)
+summary(x.trade.s)
+```
+
+As we can find above, the `distribution of data was standardized with mean 0` for all the variables, also with a `maximun value of 4.154` and `minimun of -0.7979`.
+
+We compute the `distance matrix` of our standardized variables:
+
+```{r echo=FALSE, message=FALSE}
+distance <- dist(x.trade.s, method = "euclidean", upper = TRUE, diag = TRUE) 
+distance <- as.matrix(distance)
+head(distance)
+```
+
+Analyzing the above table, we obtain the result that the `country 11 is the most distinct one`, we will check which country has the value 11:
+
+```{r echo=FALSE, message=FALSE}
+show(trade[11,1])
+```
+
+Germany is the country number 11.
+
+We are ready to perform the `multidimensional scaling` of our distance matrix with the function `cmdscale`:
+
+```{r echo=FALSE, message=FALSE}
+n = nrow(distance) 
+MDS <- cmdscale(distance, k= 2, eig = TRUE, x.ret = TRUE)
+X <- MDS$points[,1:2]
+```
+
+We will plot the previous results, using the function `ggplot2`. Accordingly we obtain a solution of multidimensional scaling with `two dimensions`:
+
+```{r echo=FALSE, message=FALSE}
+g <- ggplot(data.frame(X, trade), aes(X[,2], X[,1], label = C_EU, group=C_EU)) 
+g + geom_point(color="blue", size=2) + 
+  geom_label_repel(box.padding = 0.35, point.padding = 0.5, segment.color = "grey50") +
+  ggtitle("Multi-dimensional Scaling on Trade Data") +
+  theme_classic()
+```
+
+With this graph we can confirm that the country `Germany (11) has the most distinct value`.
+
+Subsequently we will check the `eigen values`, also we will compute the `goodness of fit` of the solution:
+
+```{r echo=FALSE, message=FALSE}
+ev <- MDS$eig 
+gof <- MDS$GOF
+print(round(ev,digits=4))
+```
+
+```{r echo=FALSE, message=FALSE}
+print(gof)
+```
+
+We obtain `0.9544 as the goodness of fit`. It is an elevate value, hence we can conclude that `the data was fitted really well`.
+
+We will continue with the `fitted distances`:
+
+In the next plot we will be able to check `the fitted distances against the observed distances`, also we will plot a red line, as regression line:
+
+```{r echo=FALSE, message=FALSE}
+fitted <- as.matrix(dist(X, method = "euclidean"))
+fitted <- as.vector(fitted)
+observed <- as.vector(distance)
+reg <- lm(fitted~observed)
+plot(observed, fitted,pch=19, cex=0.4)
+abline(lm(fitted~observed), col="red")
+```
+
+As we can observe in the graph above, the `red line of regression goes linearly respect to the fitted and observed distances`, this can prove that there is a `strong correlation between the fitted and observed distances`, which was our initial target. Apart from that we can tell that it gives a really good goodness of fit, as the regression line has almost 45 degrees.
+
+```{r echo=FALSE, message=FALSE}
+print(paste("Coefficient of determination:", summary(reg)$r.squared))
+```
+
+The `coefficient of determination` confirms as well, that we have fitted the data very well, with `high value of 0.9956`.
+
+# 6) `Non-metric MDS`:
+
+In this case, contrary to the previous technique (MDS), it `finds a non-parametric monotonic relationship` between the dissimilarities in the item matrix and the Euclidean distances between items, and the location of each item in the low-dimensional space.
+
+```{r echo=FALSE, message=FALSE}
+n <- nrow(distance)
+init <- scale(matrix(runif(n*2),ncol=2),scale=FALSE)
+nmmds.out <- isoMDS(distance, init, k=2, maxit = 100)
+```
+
+```{r echo=FALSE, message=FALSE}
+Y <- nmmds.out$points
+g <- ggplot(data.frame(Y, trade), aes(Y[,2], Y[,1], label = C_EU, group=C_EU))
+g + geom_point(color="blue", size=2) + 
+  geom_label_repel(box.padding = 0.35, point.padding = 0.5, segment.color = "grey50") +
+  ggtitle("Non-Metric Multi-dimensional Scaling on Trade Data") +
+  theme_classic()
+```
+
+Above we obtain the plot of two dimensional solutions.
+
+```{r echo=FALSE, message=FALSE}
+nmmds <- metaMDS(comm = distance, distance = "euclidean", k=2)
+gof <- goodness(nmmds)
+plot(nmmds, display = "sites", type = "n", ylab=c(-4,4))
+points(nmmds, display = "sites", cex = 2*gof/mean(gof))
+```
+
+Above we have the results of the `stress` (or `goodness of fit`), we should minimize it in order to obtain the MDS solution.
+
+Now we will graphically check the stress:
+
+```{r echo=FALSE, message=FALSE}
+stressplot(nmmds, pch = 19, cex=0.75, l.col = "tomato", p.col = "skyblue")
+fitted <- as.vector(as.matrix(dist(Y, method = "euclidean")))
+observed <- as.vector(as.matrix(distance))
+reg <- lm(fitted~observed)
+plot(observed, fitted,pch=19, cex=0.4)
+abline(lm(fitted~observed), col="red")
+```
+
+
+We obtain a `coefficient of determination of 0.9967`, we can also see in the above graph that in almost all cases the fitted distances are perfectly related with observed distances.
+
+Now we will `compute the stress for all the dimensions`, and we will explain how many dimensions are required in order to obtain a good fit:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+stress_vec <- numeric(10)
+for(i in seq(10)){
+  stress_vec[i] <- metaMDS(distance, distance = "euclidean", k=i)$stress
+}
+```
+
+Graph of the above `stress analysis`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+plot(seq(10),stress_vec, type = 'o', ylab = "Stress", xlab = "Number of dimensions",
+     col="tomato", pch=19)
+abline(h=0.2, lty=2)
+abline(h=0.02, lty=3)
+```
+
+As we can find above, if we consider `2% as the maximum stress acceptable` (this low value, because the data is highly correlated). Therefore, we should use two variables, obtaining a little bit less than 2% of stress.
+
+# 7) `PCA - Principal Component Analysis`:
+
+Now we will apply the `lineal dimensionality reduction method PCA`, which minimized the variances.
+
+Firstly, we will `normalize the data`, as it is the fist step before applying PCA:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+x.trade.n<-data.Normalization(x.trade.df, type="n1",normalization="column")
+summary(x.trade.n)
+```
+
+Once the data has been normalized, we can `apply PCA`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+x.trade.pca <- prcomp(x.trade.n, scale = TRUE)
+fviz_eig(x.trade.pca)
+```
+
+Above we can find the eigenvalues for each dimension. As we can see, the `first variable can contain almost 80% of the information`, because there is high correlation between the features.
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+fviz_pca_ind(x.trade.pca, 
+             col.ind = "cos2", 
+             gradient.cols = c("#800000", "#FFA500", "#008000"),
+             repel = TRUE)
+```
+
+Plot of the `columns for eignvalue for each dimension`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+fviz_pca_ind(x.trade.pca, 
+             col.ind = "cos2", 
+             gradient.cols = c("#800000", "#FFA500", "#008000"),
+             repel = TRUE)
+```
+
+Plot of the `columns for eignvalue for each variable`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+fviz_pca_var(x.trade.pca,
+             col.var = "contrib", 
+             gradient.cols = c("#800000", "#FFA500", "#008000"),
+             repel = TRUE)
+```
+
+Plot for `columns for each of the dimensions with the vectors`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+fviz_pca_biplot(x.trade.pca, repel = TRUE,
+                col.var = "#D2691E",
+                col.ind = "#000000")
+```
+
+`Representation of the importance of each variable`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+var <- get_pca_var(x.trade.pca) 
+corrplot(var$cos2, is.corr = FALSE)
+```
+
+As we can see above, the `least importance variable is M_T_G` (sea transport of goods), because it is less correlated than the others, as we see in the previous steps.
+
+We finished with the `graphical results of PCA`, now we can see the `numerical results`:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+eigvalues <- get_eigenvalue(x.trade.pca) 
+eigvalues
+```
+
+Above we have the table with the `eigenvalue for each feature`.
+
+We can obtain the results for the variables that we used in this analysis, also the coordinates of the variables:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+resultsvariables <- get_pca_var(x.trade.pca)
+resultsvariables$coord
+```
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+resultsvariables$contrib
+```
+
+Above we can find the `contribution to PCA for each variable`.
+
+Moreover, the results of the representation:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+resultsvariables$cos2
+```
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+resultsstations <- get_pca_ind(x.trade.pca) 
+resultsstations$coord
+resultsstations$contrib
+resultsstations$cos2
+```
+
+# 8) `Conclusions`:
+
+As a result of the above analysis, we can conclude that `it is possible to reduce dimensions to the dataset selected`, not loosing a lot of information.
+
+The first step of the analysis allow us to conclude that `all the variables were highly correlated`, probably because all of them depend on how big the country is. This means that bigger economies will have a big GDP, but also the same for the rest of variables. The European Union 28 has freedom in terms of intra-comunitari trade, which means that there are not any barriers, also for the extra-comunitari trade, as the European Union 28 has common trade policy against external countries, via tariff, or free trade agreements (for example: CETA, between EU-28 and Canada). Consequently, as per previous arguments big economies will have bigger GDP, volume of intra-comunitary and extra-comunitari trade, but also air transport of goods.
+
+On the other hand, there is `one variables less correlated`, sea transport of goods, as this depends not only on how big is the economy, but also it depends on geographical reasons, as there are countries with zero values - they have not access to sea ports.
+
+After applying dimensionality reduction techniques, we can find `the best goodness of fit with two variables`, this means that `we reduced five features`. Moreover, we checked that one variable alone could contain almost 80% of the information, but one of the main reasons of applying dimensionality reduction apart from compression data, is visualization, and at least we need two variables in order to make a graphical representation. Additionally, we consider the variables were highly correlated, hence we set up a low acceptable level of stress, less than 2% and we achieved it with two variables.
+
+# 9) `Extensions - Image compressing`:
+
+One of the `applications of dimensionality reduction is image compressing`, when we want to reduce the weight in term of memory of the image, not losing the quality and shape.
+
+First we should install the package `jpeg`, in order to manipulate .jpeg files:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+library(jpeg)
+```
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+setwd("/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR")
+rome <- readJPEG("Rome.jpg")
+```
+
+![Original photo](/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR/Rome.jpg)
+
+We can see the original photo below (`1.243.080 bytes` - 1,2 MB).
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+dim(rome)
+```
+
+As we can see above the Rome image is now represented as `three matrices` in an array of `3264x1836`. Each matrix corresponds to the RGB (red, green and blue) color value scheme.
+
+Now we will extract the individual color value matrices to `perform PCA` on each one:
+
+```{r echo=FALSE, message=FALSE, warning = FALSE}
+r <- rome[,,1]
+g <- rome[,,2]
+b <- rome[,,3]
+```
+
+We performed `PCA on each color value matrix`:
+
+```{r echo=FALSE, eval=FALSE,  message=FALSE, warning = FALSE}
+rome.r.pca <- prcomp(r, center = FALSE)
+rome.g.pca <- prcomp(g, center = FALSE)
+rome.b.pca <- prcomp(b, center = FALSE)
+```
+
+Now we collect the PCA objects into the list `rgb.pca`:
+
+```{r echo=FALSE, eval=FALSE, message=FALSE, warning = FALSE}
+rgb.pca <- list(rome.r.pca, rome.g.pca, rome.b.pca)
+```
+
+At this point we are `ready to compress the image`. After the principal components were founded for each color value matrix, we have a new dimensions that describe the original pixels (data).
+
+We are going to apply one `for loop in order to reconstruct the original image using the projections of the data`. We will create different files, with different number of components:
+
+```{r echo=FALSE, eval=FALSE,  message=FALSE, warning = FALSE}
+for (i in seq.int(3, round(nrow(rome) - 10), by = 40)) {
+  pca.img <- sapply(rgb.pca, function(j) {
+    compressed.img <- j$x[,1:i] %*% t(j$rotation[,1:i])
+  }, simplify = 'array')
+  writeJPEG(pca.img, paste('rome_compressed_', round(i,0), '_components.jpg', sep = ''))
+}
+```
+
+* `3 components` (182.824 bytes - 188 KB):
+
+![3 components](/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR/rome_compressed_3_components.jpg)
+
+* `43 components` (332.384 bytes - 336 KB):
+
+![43 components](/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR/rome_compressed_43_components.jpg)
+
+* `83 components` (375.131 bytes - 377 KB):
+
+![83 components](/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR/rome_compressed_83_components.jpg)
+
+* `523 components` (409.873 bytes - 414 KB):
+
+![523 components](/Users/lajobu/Documents/University/Subjects/First year/1Y - First semester/1 Monday/Unsupervised Learning/Unsupervised Learning/Projects/Project DR/rome_compressed_523_components.jpg)
+
+# 9) `Summary and conclussions - Imagine Compressing`:
+
+`Original photo 1836 components` (1.243.080 bytes - 1,2 MB) 3 components (182.824 bytes - 188 KB) 43 components (332.384 bytes - 336 KB) 83 components (375.131 bytes - 377 KB) 523 components (409.873 bytes - 414 KB)
+
+As we can see in the different photos, we `reduced the components but also the memory used`. The original photo was taken with my smart-phone during one travel to Rome, and as we can see the quality is really good, with a lot of components, but I cannot see a lot of difference between the original and the one with 523 components. If we needed to make zoom to the photo of 523 components, for sure we would feel the difference, but without zoom is more or less the same. The one with 3 components is not really useful, as we lost a lot of information, we are not able for example to see the shape of the sculpture. In the next one, with 43 components we can see the shape, but the quality is not really good, even we can see a lot of pixels. Finally in the one of 83 we can see the shape of the figure, also we can see more pixels than the previous one with 43 components.
+
+Image compressing with PCA could have a lot of application, for example when building a website and we want to show images. In case of building a website, if I would like to show the different things that one can visit in Rome with all the details, maybe I will use the one with 523 components, in this case the image was compressed in 67%. On the other hand, it is possible that in one website we would not like to show all the full details, just to show the image with escalated dimension as showed before (almost we will not be able to see the pixels), in this case I would use the one with 83 components, which compressed the picture in almost 70%.
+
+Maybe there is not a lot of difference between the picture with 523 components and the one with 83 components, in terms of compression, but if we want to show several photos on the same page, the sum of the compressions of each one, could cause our website to run in a slow way.
