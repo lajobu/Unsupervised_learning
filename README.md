@@ -25,7 +25,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 ## :ballot_box_with_check: 2) Dimensionality reduction - Applying Dimensionality Reduction on the EU-28 trade, during 2018 and image compressing to the picture: Rome.jpg
 
-[:round_pushpin: RPubs - Dimensionality reduction]()
+[:round_pushpin: RPubs - Dimensionality reduction](https://rpubs.com/Lajobu/DR_trade)
 
 [:round_pushpin: R_markdown - Dimensionality reduction]()
 
