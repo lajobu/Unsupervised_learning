@@ -36,7 +36,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 [:round_pushpin: RPubs - Association rules]()
 
-[:round_pushpin: R_markdown - Association rules]()
+[:round_pushpin: R_markdown - Association rules](https://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/AR.Rmd)
 
 [:round_pushpin: Jupyer notebook - Association rules](https://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/Association%20rules.ipynb)
 ![alt text](https://github.com/lajobu/Unsupervised_learning/blob/master/Pictures/Association%20rules.png) 
