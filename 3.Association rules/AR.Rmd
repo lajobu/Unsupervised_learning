@@ -1,0 +1,507 @@
+---
+title: "Applying Association rules on 2000 supermarket baskets"
+author: 'Jorge Bueno Perez'
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r echo = F, results = 'hide', message= FALSE}
+library(knitr)
+library(rmdformats)
+```
+
+```{r setup, echo=FALSE, cache=FALSE}
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1) `Project description`:
+
+The goal of this paper is to learn how to `apply apriori association rules algorithm` with R.
+
+In this paper we will analyze a `random dataset` generated with the help of the website: https://www.dunnhumby.com/. It contains `2000 different supermarket baskets/transactions in two different periods of time`, with other additional information. For the purposes of this paper, the columns `PROD_CODE` (character, with the format: PRD0+6numbers) and `BASKET_ID` (number with 15 digits) will be selected.
+
+Association rules can be applied in many ways, one of the most popular one appears in a `shopping baskets` data sets, as it can bring `valuable information to the shops`, and it can answer many questions like: How the catalog of products should be designed? Where each product should be located in the shop? Which products should receive a promotion? Additionally, we can predict customer behavior.
+
+# 2) `Manipulation of the data`:
+
+* First we will load all the necesary `packages` and the `data`:
+
+```{r echo = T, results = 'hide', message= FALSE, warning= FALSE}
+library(arules)
+library(plyr)
+library(RColorBrewer)
+library(arulesViz)
+library(Matrix)
+library(plot3D)
+library(rgl)
+library(OceanView)
+library(rgl)
+library(plot3Drgl)
+library(reshape2)
+library(treemap)
+library(reshape2)
+```
+
+In association rules the `manipulation of the data is really important`, we should have `discrete data`.
+
+In this case we have continuous data, hence the first step will be to `transform the data from continuous to discrete`.
+
+First of all we should import the two csv files, each one represents the basket of one week:
+
+```{r echo = F, results = 'hide', message= FALSE}
+setwd("/Users/lajobu/Desktop/Unsupervised_learning-master/3.Association rules")
+transactions_200626 <- read.csv(
+    "dunnhumby/transactions_200626.csv")
+transactions_200627 <- read.csv(
+    "dunnhumby/transactions_200627.csv")
+transactions <- rbind(transactions_200626, transactions_200627)
+options(digits = 14) 
+```
+
+```{r echo=FALSE}
+head(transactions)
+```
+
+```{r echo=FALSE}
+dim(transactions)
+```
+
+As we can see above, we have a dataset with `22 columns` and `12905 rows`.
+
+```{r echo=FALSE}
+options(digits = 8) 
+summary(transactions)
+```
+
+As it was mentioned before, for the purpose of this paper we will `use just two columns`, the first one, `THE BASKET_ID` that is a character with the format: `PRD0+6numbers`, it represents a unique value for each transaction, in the data set there were many possible variables to choose, but we are interested to have the baskets. The second feature, the `PROD_CODE` as a `numeric value with 15 digits`, represents a unique id for each product. The data set `transactions1`, was created with these two variables
+
+```{r echo=FALSE}
+options(digits = 14)
+transactions1 <- cbind(transactions["BASKET_ID"], transactions["PROD_CODE"])
+head(transactions1)
+```
+
+```{r echo=FALSE}
+dim(transactions1)
+```
+
+The dataset transaction1 was created, it has `2 columns` (features), and `12905 rows`. It means that we have `12904 baskets associated with each product`, the transaction can be repeated, the rule is that we cannot have the same transaction with the same product.
+
+The above result with use of the function dim() is not enough to answer questions like: `How many baskets/transaction are in the data set?` `How many products are in the data set?` But we can reply to this question with the functions `length()` and `unique()`:
+
+```{r echo=FALSE}
+cat("In the data set transactions1 there are:", length(unique(transactions$BASKET_ID)),
+    "unique baskets/transactions")
+cat("\nIn the data set transactions1 there are:", length(unique(transactions$PROD_CODE)),
+    "unique products")
+```
+
+At this point, it would be interesting to create a `treemap` in order to see the `most bought products` along all the baskets:
+
+```{r echo=FALSE}
+s <- data.frame(count(transactions1$PROD_CODE))
+dim(s) 
+```
+
+As we can see above there are too many `products 3100`, and it would be difficult to analyze something in the treemap, hence it would be better to create the rule that only the `products with the frequency more than 20` will be represented, as we can see below:
+
+```{r echo=FALSE}
+r <- s[!rowSums(s[-1] < 20),]
+dim(r) 
+```
+
+`64 products` are selected.
+
+```{r echo=FALSE}
+treemap(r,
+        vSize = "freq",  
+        index ="x",
+        palette = "Dark2",  
+        title="Products that", 
+        fontsize.title = 14 
+        ) 
+```
+
+The `sum of the frequency` should be `the same as the length of the transactions1` data set.
+
+```{r echo=FALSE}
+sum(s$freq)
+```
+
+transactions1 was a continuous data, now we will `begin to transform to discrete`, with the help of the function `ddply()`:
+
+```{r echo=FALSE}
+transactions2 <- ddply(transactions1,
+                       c("BASKET_ID"),
+                    function(df1)paste(df1$PROD_CODE, 
+                                       collapse = ","))
+colnames(transactions2) <- c("Basket number", "Product codes")
+head(transactions2)
+```
+
+We have a new data set with `discrete data`, `transactions2`. Now we can proceed to `save the data as csv file`. To do this we will use `write.table` instead of write.csv method, as the second method does not allow to use col.names equal to false, in order not to have the column names in the csv file
+
+```{r echo=FALSE, eval=FALSE}
+write.table(transactions2,
+            "~/Desktop/Project AR/transactions.csv", 
+            quote = FALSE, 
+            row.names = FALSE, 
+            col.names = FALSE)
+```
+
+Once the file is created, we can proceed to read it as transactions, creating a new discrete data set: basket, which will be used along the `application of the apriori association rules algorithm`.
+
+```{r echo=FALSE}
+basket <- read.transactions("transactions.csv",
+                            format = 'basket', 
+                            sep=',')
+```
+
+```{r echo=FALSE}
+summary(basket)
+```
+
+There are `2000 transactions` and `4875 products`, the `density tells us the total number of products that are purchased divided by a possible number of products in that matrix`, in our case it has the value: `0.0013235897435897`
+
+While checking the `summary` of our transactions, we can find a `valuable information`:
+
+* Firstly, we are able to calculate `how many products were purchased`:
+
+```{r echo=FALSE}
+cat("The total number of products purchased is:", floor(2000 * 4875 * 0.0013235897435897), 
+    "\nAnd it should be equal +1 to the length of rows of the original data set:",
+dim(transactions))
+```
+
+Consequently, we will be able to check if me made any mistake in the process of transforming our data from continuous to discrete
+
+Note that it should be equal to plus one, as in the original data frame (transactions) we are counting also the column names, but the csv file has not the column names as it was declared: col.names = FALSE, in the write.table function
+
+* Also we can find the `most commonly bought products`:
+
+1) `PRD0903052` - 268 units 
+
+2) `PRD0903678` - 201 units 
+
+3) `PRD0904358` - 165 units
+
+Finally, we can see that the `average of transaction is 6.4525` and the `maximum number of products in one transaction is equal to 51`
+
+Now we can create a `bar chart graph` plot in order to represent the different `frequencies of the products`. In this case we display the top `20 most frequently bought products`, as a relative measure (it can be also absolute).
+
+```{r echo=FALSE}
+itemFrequencyPlot(basket, 
+                  topN = 20,
+                  type = "relative", 
+                  col = brewer.pal(8,'Pastel2'),
+                  main = "Relative product frequency plot:")
+```
+
+When we used `summary()` we found the same information as above, the product: `PRD0903052 is the most frequently bought` along the data, we can see that it appears with `frequency more than 12%`
+
+The previous graph was created without fixing the support, but it is possible to `fix the support`. The support is the `frequency of the pattern in the rule`, it has been `set up as 0.03`, this means that the product should occur at least 3 times in 100 transactions, as we can find below there are `only 6 items` that meet this condition:
+
+```{r echo=FALSE}
+itemFrequencyPlot(basket, 
+                  support=0.03, 
+                  cex.names=0.8,
+                  type = "relative",
+                  col = brewer.pal(8,'Pastel2'),
+                  main = "Relative product frequency plot, support 0.03:")
+```
+
+If we increase the support we will have more items, we can check this with `support 0.05`:
+
+```{r echo=FALSE}
+itemFrequencyPlot(basket,
+                  support=0.05, 
+                  cex.names=0.8,
+                  type = "relative",
+                  col = brewer.pal(8,'Pastel2'),
+                  main = "Relative product frequency plot, support 0.05:")
+```
+
+In this case there are `only 3 products that occur at least 5 times in 100 transactions`, it sense logical that the support has negative correlation with the number of products - `more support means less products`
+
+Also we can find the same result as before, but in a `table with the help of the algorithm eclat`:
+
+
+```{r echo=FALSE}
+freq.items <- eclat(basket, 
+                    parameter=list(support=0.03, 
+                                   maxlen=15))
+inspect(freq.items)
+```
+
+Additionally, we can create different kind of `cross tables`:
+
+```{r message=FALSE}
+ctbasket <- crossTable(basket, 
+                       measure="count", 
+                       sort=TRUE) 
+```
+
+As we can see in the `above cross table` the measure `count` was used, it means that we will have the information about `how many times the products occur together`.
+
+* For example: 
+
+1) The `product PRD0903052` occurred `268` (as the same product against each product, is the count of each product) 
+
+2) The `product PRD0903052` and `PRD0903678` occurred together in `45 baskets`
+
+```{r message=FALSE}
+stbasket <- crossTable(basket, 
+                       measure="support", 
+                       sort=TRUE) 
+```
+
+In this second table the `measure support` was used, it is similar to the previous result, but in this case it is `relative to the total number of baskets (2000)`. As we could see before, the product `PRD0903052 and PRD0903678` occurred `together in 45 baskets`, hence in this case we will have `45 divided 2000` (second row, first column)
+
+```{r echo=FALSE, message=FALSE}
+cat("The support of  PRD0903052 and PRD0903678 products is equal to:", 45/2000)
+```
+
+We can apply a `statistic association test, chi-squared`. By way of this test we will be able to check if there is association or not between the products.
+
+`p-value: 5%`
+
+`H0: No association between the two variables` (null hypothesis) 
+
+`H1: Association between the two variables` (alternative hypothesis)
+
+If `value > 0.05 = Not reject H0`, there is `no association between the two variables` If `value < 0.05 = Reject H0`, there is `association between the two variables`
+
+```{r message=FALSE}
+chibasket <- crossTable(basket, 
+                        measure="chiSquared", 
+                        sort=TRUE) 
+```
+
+```{r echo=FALSE, message=FALSE}
+dim(chibasket)
+```
+
+As per the above results, it seems that at least in the head always we have a p-value lower than 5%, hence `there is association between all the products`. However, this applies only for the header, hence it would be convenient to check somehow the rest of the values.
+
+As there are `more than 10 million values`, it would be better to `create a plot`, instead of storing the data in a list
+
+```{r echo=FALSE, message=FALSE}
+cat("In the crosstable 'chibasket' there are:", 
+    floor(((4874*4874)/2) - (4874/2)), 
+    "unique values")
+```
+
+```{r echo=FALSE, message=FALSE}
+plot(chibasket,
+    main = "Graph of results for the cross table chibasket:")
+```
+
+As we can see in the graph above, `there is not any p-value greater than 5%`, hence we can consider that `there are association for all the products`
+
+# 3) `Generating Rules`:
+
+* `Apriori algorithm`:
+
+```{r echo=FALSE, message=FALSE}
+arbasket <- apriori(basket, 
+                    parameter = list(supp = 0.0015, 
+                                     conf = 0.4))
+```
+
+The algorithm will take basket as the transaction object on which mining is to be applied. The parameter were set up as `minimum support: 0.0015`, and `minimum confidence: 0.4`
+
+As we can see above there are `410 rules`, but `some of them are redundant`, for this we will proceed to eliminate the redundant rules
+
+```{r echo=FALSE, message=FALSE}
+subset.rules <- which(colSums(is.subset(arbasket, arbasket)) > 1) 
+length(subset.rules)
+```
+
+We obtained `132 redundant rules`, hence we should proceed to delete them from our original dataset
+
+```{r echo=FALSE, message=FALSE}
+arbasket <- arbasket[-subset.rules] 
+arbasket
+```
+
+Finally, our dataset `arbasket` will have `278 rules`
+
+```{r echo=FALSE, message=FALSE}
+options(digits = 4)
+summary(arbasket)
+```
+
+* We can check the `summary`, in order to obtain more information:
+
+- `Total number of rules: 278`
+
+- `Distribution of rules`: a length of 2 products have the most rules: 263, and length of 3 products have the lowest number of rules: 15 -We can see also the summary of quality measures 
+
+-Finally there is information used for creating the rules
+
+```{r echo=FALSE, message=FALSE}
+options(digits=5)
+```
+
+```{r echo=FALSE, message=FALSE}
+inspect(head(sort(arbasket, 
+                  by ="lift")
+             ,5)) 
+```
+
+The `lift is the result of dividing the confidence, between the expected confidence`
+
+As we can see in the results above, we obtained a `large lift value`. As the value in this `top is greater than 1`, it means that the `occurrence of the first product` (for example, `PRD0904263) has a positive effect on the occurrence of the product (PRD0901819)`
+
+We can check also the `lower lift`, in order to see if there is any `rule lower or equal to 1`, as we will have a different interpretation:
+
+```{r echo=FALSE, message=FALSE}
+inspect(head(sort(arbasket, 
+                  by ="lift",
+                 decreasing = FALSE) #Lift
+             ,5))
+```
+
+There is `not any lift value for the rules lower or equal to 1`, the `minimum value obtained is 2.9851`, hence the interpretation of the top will be the same for all the products
+
+`Anyone who buys PRD0903052 is more than 2.9851 times more likely to buy PRD0901067/PRD0901387/PRD0902819/PRD0904613/PRD0904738 than any other client`
+
+The results are as expected, because when it was ran the chi-squared we could not reject the null hypothesis of independent products
+
+```{r echo=FALSE, message=FALSE}
+arbasket.by.support <- sort(arbasket, 
+                            by="support", 
+                            decreasing = TRUE) 
+inspect(arbasket.by.support[1:5])
+```
+
+As the previous interpretations, also in this case the product PRD0903052 is present in all the results, we were expecting this, as this product is the most frequently bought. We saw before that this product appears in more than 12% of the 2000 baskets
+
+A lot of `rules have small support`, but the `confidence is greater or equal to 0.40`
+
+* There are `different kind of ways to plot the results`:
+
+We can create a `scatter plot with the confidence and support` (two dimensions), for the `rules with confidence more than 0.5`, 126 rules:
+
+```{r echo=FALSE, message=FALSE}
+subRules <- arbasket[quality(arbasket)$confidence > 0.5]
+plot(subRules, 
+     measure="support", 
+     method="two-key plot", 
+     jitter = 0)
+```
+
+
+We can do the same but in this case `with confidence, lift and support` (`three dimensions` with the help of `shading`), for the rules with confidence more than 0.5, 126 rules:
+
+```{r echo=FALSE, message=FALSE}
+subRules <- arbasket[quality(arbasket)$confidence > 0.5]
+plot(subRules, 
+     measure = c("support", "confidence"), 
+     shading = "lift", 
+     jitter = 0)
+```
+
+It appears that `when there is a higher lift, there is also a higher confidence`
+
+For the `next graphs we will use a set of 50 rules` (tenarbasket), with the highest confidence:
+
+```{r echo=FALSE, message=FALSE}
+tenarbasket <- head(arbasket, 
+                    n = 50, 
+                    by = "confidence")
+tenarbasket
+```
+
+We can create a `grouped matrix plot`, it is similar to the previous representations, but in this case it shows the `support of the rules`:
+
+```{r echo=FALSE, message=FALSE}
+plot(tenarbasket, 
+     method = "matrix", 
+     measure = "lift")
+```
+
+Apart from that, we can create a `matrix with 3 dimensions`:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+plot(tenarbasket, 
+     method = "matrix3D", 
+     measure = "lift")
+```
+
+We have the possibility to create a `grouped matrix`, also for 50 rules:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+plot(tenarbasket, 
+     method = "grouped", 
+     measure="support")
+```
+
+Additionally, we can `show dependencies with parallel coordinates plot`, in this case just for the `10 rules with the highest confidence`. The most red arrow represents the rule with the highest lift, as we saw before, between the product PRD0904263 and PRD0901819. Also we can see that a lot of arrow connect the product PRD0903052 on the second position:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tensarbasket <- head(arbasket, 
+                     n = 10, 
+                     by = "confidence")
+plot(tensarbasket, 
+     method = "paracoord",
+    control = list(reorder = TRUE))
+```
+
+Instead of creating the above representation we can display it as the `scheme below`, obtaining the same results:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+plot(tensarbasket, 
+     method = "graph",
+     control=list(alpha=1))
+```
+
+Until now, we were choosing the `result based on the parameters lift, support and confidence`, but it will be possible also to `check only the rules that implied one product`, this could be helpful if we want just to have the information for one concrete product
+
+In this case we will `analyze the product: PRD0900302`:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+PRD0903052.rule <- sort(subset(arbasket, subset = rhs %in% "PRD0903052"), by = "confidence")
+summary(PRD0903052.rule)
+```
+
+As we can see above, the `product PRD0903052 appears in 175 rules`
+
+We are sure that there is `not any redundant rule`, as all of them were removed before to the data set arbasket
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+inspect(PRD0903052.rule[1:20])
+```
+
+We can `represent the 175 rules` obtained for the product: `PRD0903052`:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+plot(PRD0903052.rule,  
+     measure=c("support", "confidence"), 
+     shading="lift", 
+     jitter = 0)
+```
+
+As we can see, when there is `lower support there is larger confidence, and larger lift`
+
+# 4) `Conclusions`:
+
+In `comparison with others unsupervised machine learning methods`, in `association rules` the fist step of `data preparation is really important`, and it can be really time consuming. Most of the times we have a continuous data, and in order to apply the algorithm, firstly the `data should be converted to discrete`.
+
+In `large datasets it is really difficult to make an interpretation from the tables or matrix`, as we have several times millions of values. For this reason, the `graphical analysis for the interpretation of the results is really important in this case`.
+
+# 5) `Data set bibliography`:
+
+https://www.dunnhumby.com/careers/engineering/sourcefiles?sourcefile=https%3A//www.dunnhumby.com/sites/default/files/sourcefiles/dunnhumby_Let%27s-Get-Sort-of-Real-%28Sample-2K-baskets%29.zip
