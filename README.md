@@ -34,7 +34,7 @@ Source: [Wikipedia](https://en.wikipedia.org/wiki/Unsupervised_learning)
 
 ## :ballot_box_with_check: 3) Association rules - Applying Association rules on 2000 supermarket baskets
 
-[:round_pushpin: RPubs - Association rules]()
+[:round_pushpin: RPubs - Association rules](https://rpubs.com/Lajobu/AR_basket)
 
 [:round_pushpin: R_markdown - Association rules](https://github.com/lajobu/Unsupervised_learning/blob/master/3.Association%20rules/AR.Rmd)
 
