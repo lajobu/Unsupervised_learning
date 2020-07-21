@@ -6,7 +6,7 @@ Here you can find the papers that I wrote for the subject: `Unsupervised Machine
 
 The code was written in `R language`, also there is available a `jupyter notebook`, in order to find the code together with the analysis.
 
-#  :question: What is unsupervised learning?
+#  :question: What is unsupervised learning? 
 
 `Unsupervised learning` is a type of self-organized Hebbian learning that helps `find previously unknown patterns in data` set `without pre-existing labels`. It is also known as `self-organization` and allows the `modeling of probability densities of given inputs`. It is one of the three main categories of machine learning, along with supervised and reinforcement learning. Semi-supervised learning has also been described, and is a hybridization of supervised and unsupervised techniques.
 
