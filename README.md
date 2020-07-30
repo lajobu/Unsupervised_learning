@@ -4,7 +4,7 @@
 
 Here you can find the papers that I wrote for the subject: `Unsupervised Machine Learing` during my `MA Data Science` studies.
 
-The code was written in `R language`, also there is available a `jupyter notebook`, in order to find the code together with the analysis.
+The code was written in `R language`, also there is available a `jupyter notebook`, in order to find the code together with the analysis. 
 
 #  :question: What is unsupervised learning? 
 
